@@ -1,18 +1,26 @@
-"""Manage a Start Menu \\ Startup shortcut so the tray launches at login.
+"""Windows shortcut management for Syncthing Tray Toggle.
 
-A Startup-folder ``.lnk`` is preferred over an ``HKCU\\...\\Run`` registry value:
-it is visible and toggleable in Task Manager's Startup tab, needs no registry
-write, and is trivially idempotent (one file).
+Two kinds of shortcut, both pointing at the venv's ``pythonw.exe`` so they run
+with no console window and with the dependencies available:
 
-Usable two ways:
-    * from the tray's "Start on login" menu item (``install`` / ``uninstall``);
-    * standalone before the tray exists: ``pythonw autostart.py --install``.
+* a **login** shortcut in the Startup folder (``install`` / ``uninstall``);
+* a **launcher** shortcut you can double-click, on the Desktop or in the
+  project folder (``make_launcher``).
+
+Usable from the tray's "Start on login" menu item, or standalone:
+
+    python autostart.py --install       # run at login
+    python autostart.py --desktop        # double-click launcher on the Desktop
+    python autostart.py --here           # double-click launcher in this folder
+
+Run the CLI with ``python`` (not ``pythonw``) so the printed output is visible.
 """
 from __future__ import annotations
 
 import os
 import subprocess
 import sys
+import winreg
 from pathlib import Path
 
 SHORTCUT_NAME = "Syncthing Tray Toggle.lnk"
@@ -25,6 +33,19 @@ def _startup_dir() -> Path:
     return Path(base) / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Startup"
 
 
+def desktop_dir() -> Path:
+    """The real Desktop path, honoring OneDrive/known-folder redirection."""
+    try:
+        with winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER,
+            r"Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders",
+        ) as key:
+            value, _ = winreg.QueryValueEx(key, "Desktop")
+        return Path(os.path.expandvars(value))
+    except OSError:
+        return Path(os.environ.get("USERPROFILE", str(Path.home()))) / "Desktop"
+
+
 def shortcut_path() -> Path:
     return _startup_dir() / SHORTCUT_NAME
 
@@ -34,7 +55,7 @@ def is_installed() -> bool:
 
 
 def _target() -> tuple[str, str, str]:
-    """Return (target_exe, arguments, working_dir) for the shortcut."""
+    """Return (target_exe, arguments, working_dir) for a shortcut."""
     here = Path(__file__).resolve().parent
     if getattr(sys, "frozen", False):
         # Packaged single-file .exe: launch it directly, no script argument.
@@ -55,9 +76,8 @@ def _ps_quote(value: str) -> str:
     return value.replace("'", "''")
 
 
-def install() -> Path:
+def _write_shortcut(lnk: Path, description: str) -> Path:
     target, arguments, workdir = _target()
-    lnk = shortcut_path()
     lnk.parent.mkdir(parents=True, exist_ok=True)
     script = (
         "$ws = New-Object -ComObject WScript.Shell; "
@@ -67,7 +87,7 @@ def install() -> Path:
         f"$s.WorkingDirectory = '{_ps_quote(workdir)}'; "
         f"$s.IconLocation = '{_ps_quote(target)}'; "
         "$s.WindowStyle = 7; "
-        "$s.Description = 'Syncthing read-only / read-write tray toggle'; "
+        f"$s.Description = '{_ps_quote(description)}'; "
         "$s.Save()"
     )
     subprocess.run(
@@ -80,12 +100,16 @@ def install() -> Path:
     return lnk
 
 
+def install() -> Path:
+    return _write_shortcut(shortcut_path(), "Syncthing read-only / read-write tray toggle")
+
+
 def uninstall() -> None:
     shortcut_path().unlink(missing_ok=True)
 
 
 def toggle() -> bool:
-    """Flip the autostart state. Returns True if now installed."""
+    """Flip the login-autostart state. Returns True if now installed."""
     if is_installed():
         uninstall()
         return False
@@ -93,23 +117,40 @@ def toggle() -> bool:
     return True
 
 
+def make_launcher(dest_dir: Path | str) -> Path:
+    """Create a double-click launcher shortcut in ``dest_dir``."""
+    return _write_shortcut(Path(dest_dir) / SHORTCUT_NAME, "Launch Syncthing Tray Toggle")
+
+
 def _main(argv: list[str]) -> int:
     import argparse
 
-    parser = argparse.ArgumentParser(description="Manage the login shortcut for Syncthing Tray Toggle.")
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("--install", action="store_true", help="create the Startup shortcut")
-    group.add_argument("--uninstall", action="store_true", help="remove the Startup shortcut")
-    group.add_argument("--status", action="store_true", help="report whether it is installed")
+    parser = argparse.ArgumentParser(
+        description="Create shortcuts for Syncthing Tray Toggle (run with python, not pythonw)."
+    )
+    parser.add_argument("--install", action="store_true", help="create the login (Startup) shortcut")
+    parser.add_argument("--uninstall", action="store_true", help="remove the login shortcut")
+    parser.add_argument("--status", action="store_true", help="report login-shortcut state")
+    parser.add_argument("--desktop", action="store_true", help="create a double-click launcher on the Desktop")
+    parser.add_argument("--here", action="store_true", help="create a double-click launcher in the project folder")
     args = parser.parse_args(argv)
 
+    did = False
     if args.install:
-        print(f"Installed: {install()}")
-    elif args.uninstall:
+        print(f"Login shortcut installed: {install()}")
+        did = True
+    if args.uninstall:
         uninstall()
-        print("Uninstalled.")
-    else:
-        print("Installed" if is_installed() else "Not installed")
+        print("Login shortcut removed.")
+        did = True
+    if args.desktop:
+        print(f"Desktop launcher created: {make_launcher(desktop_dir())}")
+        did = True
+    if args.here:
+        print(f"Project launcher created: {make_launcher(Path(__file__).resolve().parent)}")
+        did = True
+    if args.status or not did:
+        print("Login shortcut: " + ("installed" if is_installed() else "not installed"))
     return 0
 
 

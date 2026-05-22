@@ -26,6 +26,10 @@ dist/
 _preview/
 _smoke*.py
 
+# Launcher shortcuts are machine-specific (absolute venv paths) — recreate with
+# `python autostart.py --here --desktop`
+*.lnk
+
 # Windows / editors
 Thumbs.db
 desktop.ini
