@@ -170,6 +170,10 @@ uv run pyinstaller --noconsole --onefile --name SyncthingTrayToggle syncthing_tr
 The autostart helper detects a frozen build and points the shortcut at the
 `.exe` automatically.
 
+## License
+
+[MIT](LICENSE) © Ahnaf An Nafee
+
 ## Tech / keywords
 
 Syncthing · Windows system tray · tray icon toggle · receive-only ⇄ send-receive

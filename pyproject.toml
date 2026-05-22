@@ -3,6 +3,9 @@ name = "syncthing-tray-toggle"
 version = "0.1.0"
 description = "Windows system-tray toggle for a Syncthing folder's read-only / read-write state."
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Ahnaf An Nafee" }]
 requires-python = ">=3.13"
 # Runtime deps. Everything else is stdlib: urllib, json, tomllib, xml.etree,
 # ctypes, subprocess, threading, logging.
