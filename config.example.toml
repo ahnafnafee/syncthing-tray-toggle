@@ -1,0 +1,46 @@
+# Syncthing Tray Toggle — optional configuration override.
+#
+# You usually do NOT need this file. By default the app reads the API URL and
+# key straight from Syncthing's own config.xml, so it works out of the box.
+#
+# Copy this file to "config.toml" (same folder) only if you need to override
+# the defaults — e.g. point at a remote instance or pin a specific folder.
+# config.toml is gitignored because it may contain your API key.
+#
+# Precedence (highest wins):
+#   config.toml  >  environment variables  >  config.xml auto-discovery  >  defaults
+
+# REST API endpoint. Auto-discovered from config.xml's <gui><address>.
+# api_url = "http://127.0.0.1:8384"
+
+# API key. Auto-discovered from config.xml's <gui><apikey>. Override only to
+# target a different/remote instance.
+# api_key = "your-32-character-key"
+
+# Poll interval (seconds) for keeping the icon in sync with external changes
+# made via the Syncthing web GUI.
+# poll_interval = 10
+
+# Per-request network timeout (seconds). "Force rescan" uses a longer internal
+# timeout because scanning a large folder can take a while.
+# request_timeout = 8
+
+# Restrict the tray to specific folder IDs. Default: manage every folder.
+# managed_folders = ["uf2se-w3crw"]
+
+# Which folder a left-click toggles. Default: the first managed folder.
+# primary_folder = "uf2se-w3crw"
+
+# Verify TLS certificates when the GUI uses https. Syncthing's default cert is
+# self-signed, so set this to false if you switch the GUI to https.
+# verify_tls = true
+
+# --- Optional read-only safeguards (both OFF by default) ---------------------
+
+# Force every managed folder back to read-only each time the app starts.
+# reset_to_readonly_on_startup = false
+
+# Automatically return a folder to read-only this many minutes after you enable
+# write+sync (0 = never). This is a timed type-flip; it does NOT discard local
+# changes.
+# auto_revert_after_minutes = 0

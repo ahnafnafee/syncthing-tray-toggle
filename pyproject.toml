@@ -1,0 +1,17 @@
+[project]
+name = "syncthing-tray-toggle"
+version = "0.1.0"
+description = "Windows system-tray toggle for a Syncthing folder's read-only / read-write state."
+readme = "README.md"
+requires-python = ">=3.13"
+# Runtime deps. Everything else is stdlib: urllib, json, tomllib, xml.etree,
+# ctypes, subprocess, threading, logging.
+dependencies = [
+    "pystray>=0.19",
+    "pillow>=10",
+]
+
+[tool.uv]
+# This is an application (top-level modules), not an installable package, so uv
+# manages the environment without trying to build/install the project itself.
+package = false

@@ -1,0 +1,33 @@
+# Local secrets / overrides — may contain the Syncthing API key
+config.toml
+*.local.toml
+.env
+
+# Logs
+*.log
+
+# uv-managed virtual environment (uv.lock IS committed for reproducible installs)
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Optional PyInstaller packaging output
+build/
+dist/
+*.spec
+
+# Throwaway dev artifacts
+_preview/
+_smoke*.py
+
+# Windows / editors
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
